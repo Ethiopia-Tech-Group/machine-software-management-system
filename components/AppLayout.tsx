@@ -174,7 +174,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <DropdownMenuItem>
                   <Link href="/profile" className="w-full">Profile</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
+                <DropdownMenuItem>
+                <Link href="/settings" className="w-full">Settings</Link>
+                  
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>Logout</DropdownMenuItem>
               </DropdownMenuContent>
