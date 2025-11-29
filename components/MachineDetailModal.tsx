@@ -118,13 +118,13 @@ export default function MachineDetailModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="min-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="md:min-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <span className="text-2xl">{machine.name}</span>
-              <Badge variant={getStatusVariant(machine.status)} className="text-lg py-2 px-4">
+              {/* <Badge variant={getStatusVariant(machine.status)} className="text-lg py-2 px-4">
                 {machine.status.charAt(0).toUpperCase() + machine.status.slice(1)}
-              </Badge>
+              </Badge> */}
             </DialogTitle>
           </DialogHeader>
           
