@@ -18,15 +18,20 @@ import {
   Clock, 
   Calendar,
   Activity,
-  Wrench
+  Wrench,
+  Settings,
+  Wifi
 } from 'lucide-react'
 import { Machine, ControlAction } from '@/types'
+import MachineSettingsModal from '@/components/MachineSettingsModal'
+import RemoteDiagnostics from '@/components/RemoteDiagnostics'
 
 interface MachineDetailModalProps {
   machine: Machine | null
   open: boolean
   onClose: () => void
   onControl: (machineId: number, action: ControlAction['action']) => void
+  onSaveSettings: (updatedMachine: Machine) => void
 }
 
 // Speed gauge component
@@ -88,8 +93,11 @@ export default function MachineDetailModal({
   machine, 
   open, 
   onClose,
-  onControl
+  onControl,
+  onSaveSettings
 }: MachineDetailModalProps) {
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<'overview' | 'diagnostics'>('overview')
   const getStatusVariant = (status: Machine['status']) => {
     switch (status) {
       case 'running': return 'default'
@@ -100,177 +108,228 @@ export default function MachineDetailModal({
     }
   }
 
+  const handleFixIssue = (issueId: number) => {
+    // Simulate fixing an issue
+    console.log(`Fixing issue ${issueId}`)
+  }
+
   if (!machine) return null
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="min-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <span className="text-2xl">{machine.name}</span>
-            <Badge variant={getStatusVariant(machine.status)} className="text-lg py-2 px-4">
-              {machine.status.charAt(0).toUpperCase() + machine.status.slice(1)}
-            </Badge>
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 py-4">
-          {/* Left column - Machine Info */}
-          <div className="space-y-6">
-            <div className="bg-muted/50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold mb-3">Machine Information</h3>
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <span className="text-muted-foreground w-32 font-medium">Type:</span>
-                  <span>{machine.type}</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-muted-foreground w-32 font-medium">Location:</span>
-                  <span>{machine.location}</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-muted-foreground w-32 font-medium">Last Maintenance:</span>
-                  <span>{machine.lastMaintenance}</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-muted-foreground w-32 font-medium">Last Update:</span>
-                  <span>{new Date(machine.lastUpdate).toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-muted/50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold mb-3">Status Metrics</h3>
-              <div className="space-y-4">
-                <div className="flex items-center">
-                  <Thermometer className="w-5 h-5 mr-3 text-muted-foreground" />
-                  <div className="flex-1">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Temperature</span>
-                      <span className="font-medium">{machine.temperature}°C</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div 
-                        className="h-2 rounded-full bg-blue-500" 
-                        style={{ width: `${Math.min(100, machine.temperature)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center">
-                  <Activity className="w-5 h-5 mr-3 text-muted-foreground" />
-                  <div className="flex-1">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Performance</span>
-                      <span className="font-medium">{machine.performance}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div 
-                        className={`h-2 rounded-full ${
-                          machine.performance > 80 ? 'bg-green-500' :
-                          machine.performance > 60 ? 'bg-yellow-500' : 'bg-red-500'
-                        }`} 
-                        style={{ width: `${machine.performance}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center">
-                  <Clock className="w-5 h-5 mr-3 text-muted-foreground" />
-                  <div className="flex-1">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Uptime</span>
-                      <span className="font-medium">{machine.uptime}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div 
-                        className={`h-2 rounded-full ${
-                          machine.uptime > 90 ? 'bg-green-500' :
-                          machine.uptime > 70 ? 'bg-yellow-500' : 'bg-red-500'
-                        }`} 
-                        style={{ width: `${machine.uptime}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {machine.errors.length > 0 && (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-                <h3 className="text-lg font-semibold mb-2 text-destructive">Errors</h3>
-                <div className="space-y-2">
-                  {machine.errors.map((error, index) => (
-                    <p key={index} className="text-destructive flex items-start">
-                      <span className="mr-2">⚠️</span>
-                      <span>{error}</span>
-                    </p>
-                  ))}
-                </div>
-              </div>
-            )}
+    <>
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="min-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <span className="text-2xl">{machine.name}</span>
+              <Badge variant={getStatusVariant(machine.status)} className="text-lg py-2 px-4">
+                {machine.status.charAt(0).toUpperCase() + machine.status.slice(1)}
+              </Badge>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {/* Tab Navigation */}
+          <div className="flex border-b">
+            <Button
+              variant={activeTab === 'overview' ? 'default' : 'ghost'}
+              className="rounded-none rounded-tl rounded-tr"
+              onClick={() => setActiveTab('overview')}
+            >
+              Overview
+            </Button>
+            <Button
+              variant={activeTab === 'diagnostics' ? 'default' : 'ghost'}
+              className="rounded-none rounded-tl rounded-tr"
+              onClick={() => setActiveTab('diagnostics')}
+            >
+              <Wifi className="w-4 h-4 mr-2" />
+              Remote Diagnostics
+            </Button>
           </div>
           
-          {/* Right column - Gauges */}
-          <div className="space-y-6">
-            <div className="bg-muted/50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold mb-6 text-center">Performance Dashboard</h3>
-              
-              <div className="flex flex-col items-center mb-8">
-                <SpeedGauge value={machine.performance} label="Performance" />
+          {activeTab === 'overview' ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 py-4">
+              {/* Left column - Machine Info */}
+              <div className="space-y-6">
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-3">Machine Information</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center">
+                      <span className="text-muted-foreground w-32 font-medium">Type:</span>
+                      <span>{machine.type}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-muted-foreground w-32 font-medium">Location:</span>
+                      <span>{machine.location}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-muted-foreground w-32 font-medium">Last Maintenance:</span>
+                      <span>{machine.lastMaintenance}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-muted-foreground w-32 font-medium">Last Update:</span>
+                      <span>{new Date(machine.lastUpdate).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-3">Status Metrics</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center">
+                      <Thermometer className="w-5 h-5 mr-3 text-muted-foreground" />
+                      <div className="flex-1">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Temperature</span>
+                          <span className="font-medium">{machine.temperature}°C</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                          <div 
+                            className="h-2 rounded-full bg-blue-500" 
+                            style={{ width: `${Math.min(100, machine.temperature)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <Activity className="w-5 h-5 mr-3 text-muted-foreground" />
+                      <div className="flex-1">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Performance</span>
+                          <span className="font-medium">{machine.performance}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                          <div 
+                            className={`h-2 rounded-full ${
+                              machine.performance > 80 ? 'bg-green-500' :
+                              machine.performance > 60 ? 'bg-yellow-500' : 'bg-red-500'
+                            }`} 
+                            style={{ width: `${machine.performance}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <Clock className="w-5 h-5 mr-3 text-muted-foreground" />
+                      <div className="flex-1">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Uptime</span>
+                          <span className="font-medium">{machine.uptime}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                          <div 
+                            className={`h-2 rounded-full ${
+                              machine.uptime > 90 ? 'bg-green-500' :
+                              machine.uptime > 70 ? 'bg-yellow-500' : 'bg-red-500'
+                            }`} 
+                            style={{ width: `${machine.uptime}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {machine.errors.length > 0 && (
+                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold mb-2 text-destructive">Errors</h3>
+                    <div className="space-y-2">
+                      {machine.errors.map((error, index) => (
+                        <p key={index} className="text-destructive flex items-start">
+                          <span className="mr-2">⚠️</span>
+                          <span>{error}</span>
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8">
-                <div className="flex flex-col items-center">
-                  <div className="text-2xl font-bold">{machine.temperature}°C</div>
-                  <div className="text-sm text-muted-foreground">Temperature</div>
+              {/* Right column - Gauges */}
+              <div className="space-y-6">
+                <div className="bg-muted/50 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold mb-6 text-center">Performance Dashboard</h3>
+                  
+                  <div className="flex flex-col items-center mb-8">
+                    <SpeedGauge value={machine.performance} label="Performance" />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8">
+                    <div className="flex flex-col items-center">
+                      <div className="text-2xl font-bold">{machine.temperature}°C</div>
+                      <div className="text-sm text-muted-foreground">Temperature</div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <div className="text-2xl font-bold">{machine.uptime}%</div>
+                      <div className="text-sm text-muted-foreground">Uptime</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex flex-col items-center">
-                  <div className="text-2xl font-bold">{machine.uptime}%</div>
-                  <div className="text-sm text-muted-foreground">Uptime</div>
+                
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-3">Quick Actions</h3>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button 
+                      onClick={() => onControl(machine.id, 'start')}
+                      disabled={machine.status === 'running'}
+                      className="flex-1"
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      Start
+                    </Button>
+                    <Button 
+                      onClick={() => onControl(machine.id, 'stop')}
+                      disabled={machine.status !== 'running'}
+                      variant="destructive"
+                      className="flex-1"
+                    >
+                      <Square className="w-4 h-4 mr-2" />
+                      Stop
+                    </Button>
+                    <Button 
+                      onClick={() => onControl(machine.id, 'restart')}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Restart
+                    </Button>
+                  </div>
+                  
+                  <Button 
+                    variant="secondary" 
+                    className="w-full mt-3"
+                    onClick={() => setIsSettingsOpen(true)}
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Adjust Settings
+                  </Button>
                 </div>
               </div>
             </div>
-            
-            <div className="bg-muted/50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold mb-3">Quick Actions</h3>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button 
-                  onClick={() => onControl(machine.id, 'start')}
-                  disabled={machine.status === 'running'}
-                  className="flex-1"
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  Start
-                </Button>
-                <Button 
-                  onClick={() => onControl(machine.id, 'stop')}
-                  disabled={machine.status !== 'running'}
-                  variant="destructive"
-                  className="flex-1"
-                >
-                  <Square className="w-4 h-4 mr-2" />
-                  Stop
-                </Button>
-                <Button 
-                  onClick={() => onControl(machine.id, 'restart')}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Restart
-                </Button>
-              </div>
+          ) : (
+            <div className="py-4">
+              <RemoteDiagnostics machine={machine} onFixIssue={handleFixIssue} />
             </div>
-          </div>
-        </div>
-        
-        <DialogFooter className="sm:justify-between gap-2">
-          <Button variant="outline" onClick={onClose}>Close</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          )}
+          
+          <DialogFooter className="sm:justify-between gap-2">
+            <Button variant="outline" onClick={onClose}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <MachineSettingsModal
+        machine={machine}
+        open={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        onSave={(updatedMachine) => {
+          onSaveSettings(updatedMachine)
+          setIsSettingsOpen(false)
+        }}
+      />
+    </>
   )
 }

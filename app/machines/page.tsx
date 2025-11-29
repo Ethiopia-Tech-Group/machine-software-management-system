@@ -125,6 +125,17 @@ export default function MachinesPage() {
     }))
   }
 
+  const handleSaveMachineSettings = (updatedMachine: Machine) => {
+    setMachines(prev => prev.map(machine => 
+      machine.id === updatedMachine.id ? updatedMachine : machine
+    ))
+    
+    // Update selected machine if it's the one being edited
+    if (selectedMachine && selectedMachine.id === updatedMachine.id) {
+      setSelectedMachine(updatedMachine)
+    }
+  }
+
   const handleMachineClick = (machine: Machine) => {
     setSelectedMachine(machine)
     setIsModalOpen(true)
@@ -167,6 +178,7 @@ export default function MachinesPage() {
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onControl={handleMachineControl}
+        onSaveSettings={handleSaveMachineSettings}
       />
     </div>
   )
